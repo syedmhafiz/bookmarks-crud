@@ -1,0 +1,21 @@
+# NestJS .gitignore
+
+# .env file (environment variables)
+.env
+
+# Dependencies
+node_modules/
+
+# Output folder
+dist/
+
+# Debug files
+.vscode/
+.idea/
+*.log
+*.log.*
+*.test.ts
+
+# OS generated files
+.DS_Store
+Thumbs.db
