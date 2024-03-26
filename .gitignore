@@ -23,7 +23,6 @@ dist/
 /.nyc_output
 /packages/graphql
 /benchmarks/memory
-build/config\.gypi
 
 # OS generated files
 .DS_Store
