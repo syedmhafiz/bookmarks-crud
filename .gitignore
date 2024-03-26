@@ -22,7 +22,6 @@ dist/
 /coverage
 /.nyc_output
 /packages/graphql
-/benchmarks/memory
 
 # OS generated files
 .DS_Store
