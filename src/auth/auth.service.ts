@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
@@ -9,35 +9,32 @@ export class AuthService {
     constructor(private prisma: PrismaService) {}
 
     async signUp(dto: AuthDto) {
-        // hash generation
-        const hash = await argon.hash(dto?.password);
-        // check if user already exists
-        const existingUser = await this.prisma.user.findUnique({
-            where: {
-                email: dto?.email,
-            }
-        });
-        // if exisitng user, throw error if not then create user and return
-        if (!existingUser) {
-            try {
-                const user = await this.prisma.user.create({
-                    data: {
-                        email: dto?.email,
-                        hash,
-                    }
-                });
-                
-                delete user.hash;
-                return user;
-            } catch (error) {
-                throw error;
-            }
-        } else {
-            throw new ForbiddenException(
-                'Email is already taken',
-            )
+        try {
+          // Check if user already exists
+            const existingUser = await this.prisma.user.findUnique({
+                where: { email: dto.email },
+            });
+    
+            if (existingUser) throw new ForbiddenException('Email is already taken');
+
+            // Hash password
+            const hash = await argon.hash(dto.password);
+        
+            // Create new user
+            const user = await this.prisma.user.create({
+                data: {
+                    email: dto.email,
+                    hash,
+                }
+            });
+
+            delete user.hash;
+            return user;
+        } catch (error) {
+            if (error instanceof ForbiddenException) throw error;
+            throw new InternalServerErrorException('Failed to create user');
         }
-    }
+      }
 
     async logIn(dto: AuthDto) {
         // find the user
