@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
 @Injectable()
 export class AuthService {
     constructor(private prisma: PrismaService) {}
@@ -10,27 +11,31 @@ export class AuthService {
     async signUp(dto: AuthDto) {
         // hash generation
         const hash = await argon.hash(dto?.password);
-
-        try {
-            // saved the user data in the db
-            const user = await this.prisma.user.create({
-                data: {
-                    email: dto?.email,
-                    hash,
-                }
-            });
-            delete user.hash;
-            // return the saved user
-            return user;
-        } catch (error) {
-            if (error instanceof PrismaClientKnownRequestError) {
-                if (error.code = 'P2002') {
-                    throw new ForbiddenException(
-                        'Email is already taken',
-                    )
-                }
+        // check if user already exists
+        const existingUser = await this.prisma.user.findUnique({
+            where: {
+                email: dto?.email,
             }
-            throw error;
+        });
+        // if exisitng user, throw error if not then create user and return
+        if (!existingUser) {
+            try {
+                const user = await this.prisma.user.create({
+                    data: {
+                        email: dto?.email,
+                        hash,
+                    }
+                });
+                
+                delete user.hash;
+                return user;
+            } catch (error) {
+                throw error;
+            }
+        } else {
+            throw new ForbiddenException(
+                'Email is already taken',
+            )
         }
     }
 
